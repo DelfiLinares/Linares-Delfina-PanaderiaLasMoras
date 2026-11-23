@@ -1,3 +1,5 @@
+
+
 import { randomUUID } from 'node:crypto';
 import Empleado from '../models/Empleado.js';
 import { Messages } from '../enums/Messages.js';

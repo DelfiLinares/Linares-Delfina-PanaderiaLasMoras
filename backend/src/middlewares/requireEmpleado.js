@@ -1,3 +1,5 @@
+
+
 export function requireEmpleado(empleadoService) {
     return (request, response, next) => {
         try {
