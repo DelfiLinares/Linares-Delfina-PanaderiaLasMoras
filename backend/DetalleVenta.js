@@ -1,9 +1,1 @@
-class DetalleVenta {
-    constructor(producto, cantidad, subtotal){
-        this.producto = producto;
-        this.cantidad = cantidad;
-        this.subtotal = subtotal;
-    }
-}
-
-export default DetalleVenta;
+export { default } from './src/models/DetalleVenta.js';
