@@ -56,7 +56,7 @@ Toda la implementacion de la aplicacion esta en `src`:
 | --- | --- |
 | assets | Fotografias locales y creditos |
 | components | Layout, tarjetas, acciones compartidas, estado vacio, formulario, notificaciones y confirmacion |
-| pages | Catalogo, detalle, alta/edicion y pagina no encontrada |
+| pages | Menu, catalogo, detalle, alta/edicion, cuenta, carrito, pedidos y pagina no encontrada |
 | services | Unico lugar con fetch, URL, metodos HTTP y procesamiento de errores |
 | utils | Validacion, conversion, moneda y carga cancelable de recursos |
 | styles | Estilos compartidos y adaptacion a celular |
@@ -66,7 +66,16 @@ Los archivos externos a `src` son configuracion, dependencias y entrada HTML.
 
 ## Funcionalidades y accesibilidad
 
-- CRUD completo integrado con `/products` y `/products/:codigo`.
+- CRUD completo integrado con `/products` y `/products/:codigo` (solo empleados).
+- Roles: el visitante solo ve el Home y el Menu; el cliente compra; el empleado administra los
+  productos y no puede comprar. Las secciones no permitidas muestran un aviso y el backend
+  rechaza las peticiones (401/403) aunque se intenten saltear la interfaz.
+- Home (`/`) con portada, productos destacados y pasos para comprar.
+- Menu (`/menu`) con todos los productos y sus precios; el cliente agrega al carrito y el empleado edita o agrega productos.
+- Cuenta (`/cuenta`): registro e ingreso de clientes (DNI) y de empleados (DNI y codigo de empleado); la sesion se recuerda en `localStorage` y se valida contra el backend al abrir la app.
+- Carrito (`/carrito`): cambiar cantidades, quitar productos, vaciar y confirmar la compra.
+- Mis pedidos (`/pedidos`): historial de compras y cancelacion con reposicion de stock.
+- El stock siempre lo valida y actualiza el backend; el frontend muestra sus mensajes de error.
 - Busqueda, filtro por stock y ordenamiento de registros de la API.
 - Vista de tarjetas por defecto y selector accesible para cambiar a lista.
 - Estados de carga, catalogo vacio, sin resultados y errores con reintento.
@@ -79,14 +88,11 @@ Los archivos externos a `src` son configuracion, dependencias y entrada HTML.
 
 ## Criterio de diseno
 
-La estetica se adapto a las referencias visuales compartidas por la usuaria:
-fondo marfil, superficies claras, tinta oliva, acentos terracota y tipografia
-editorial DM Serif Display combinada con DM Sans para los controles.
+La estetica es calida: fondo crema, tonos mora y caramelo, bordes redondeados y
+tipografia editorial DM Serif Display combinada con DM Sans para los controles.
 La cabecera horizontal, las tarjetas y el mosaico fotografico del catalogo vacio
-mantienen la identidad Las Moras. Acentos coral y verde aportan contraste;
-formularios, notificaciones y dialogos comparten la misma paleta.
+mantienen la identidad Las Moras; formularios, notificaciones y dialogos comparten la paleta.
 El estado vacio no muestra filtros ni contadores sin informacion.
-Se conserva el flujo de gestion y el CRUD de la API sin agregar secciones
-comerciales, productos ni datos del negocio ficticios.
+No se incluyen productos ni datos del negocio ficticios.
 Las fotografias son ilustrativas, no del establecimiento real ni de productos
 de la API. Las tarjetas muestran exclusivamente los datos reales del backend.

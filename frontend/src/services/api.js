@@ -1,13 +1,22 @@
 const API_URL = (import.meta.env?.VITE_API_URL || '/api').replace(/\/$/, '');
 
+let authToken = null;
+
+export function setAuthToken(token) {
+    authToken = token;
+}
+
 export async function apiRequest(path, { method = 'GET', data, signal } = {}) {
     let response;
     try {
         response = await fetch(`${API_URL}${path}`, {
             method,
             signal,
-            headers: data === undefined ? { Accept: 'application/json' }
-                : { Accept: 'application/json', 'Content-Type': 'application/json' },
+            headers: {
+                Accept: 'application/json',
+                ...(data !== undefined && { 'Content-Type': 'application/json' }),
+                ...(authToken && { Authorization: `Bearer ${authToken}` })
+            },
             body: data === undefined ? undefined : JSON.stringify(data)
         });
     } catch (error) {

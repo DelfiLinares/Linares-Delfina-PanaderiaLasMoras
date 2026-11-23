@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { LoaderCircle, Trash2 } from 'lucide-react';
 
-export default function ConfirmDialog({ product, busy, onCancel, onConfirm }) {
+export default function ConfirmDialog({ title, children, confirmLabel, busyLabel, cancelLabel = 'Cancelar', busy, onCancel, onConfirm }) {
     const dialogRef = useRef(null);
 
     useEffect(() => {
@@ -21,12 +21,12 @@ export default function ConfirmDialog({ product, busy, onCancel, onConfirm }) {
                 }
             }}>
             <div className="dialog-symbol"><Trash2 aria-hidden="true" /></div>
-            <h2 id="delete-title">¿Eliminar este producto?</h2>
-            <p id="delete-description">Se eliminará <strong>{product.nombre}</strong> ({product.codigo}). Esta acción no se puede deshacer.</p>
+            <h2 id="delete-title">{title}</h2>
+            <p id="delete-description">{children}</p>
             <div className="form-actions">
-                <button className="button button-secondary" type="button" onClick={onCancel} disabled={busy} autoFocus>Cancelar</button>
+                <button className="button button-secondary" type="button" onClick={onCancel} disabled={busy} autoFocus>{cancelLabel}</button>
                 <button className="button button-danger" type="button" onClick={onConfirm} disabled={busy}>
-                    {busy ? <LoaderCircle className="spin" size={17} /> : <Trash2 size={17} />} {busy ? 'Eliminando...' : 'Eliminar producto'}
+                    {busy ? <LoaderCircle className="spin" size={17} /> : <Trash2 size={17} />} {busy ? busyLabel : confirmLabel}
                 </button>
             </div>
         </dialog>

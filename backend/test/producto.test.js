@@ -7,6 +7,7 @@ import { createApp } from '../src/app.js';
 import { once } from 'node:events';
 import Pan from '../Pan.js';
 import Producto from '../Producto.js';
+import { CODIGO_TEST, iniciarSesionEmpleado } from './helpers/auth.js';
 
 const producto = { codigo: 'PAN-01', nombre: 'Pan integral', precio: 1500, stock: 20 };
 
@@ -46,7 +47,7 @@ test('los imports originales conservan la herencia del dominio', () => {
 });
 
 async function startApi(context, options) {
-    const server = createApp(options).listen(0, '127.0.0.1');
+    const server = createApp({ codigoEmpleado: CODIGO_TEST, ...options }).listen(0, '127.0.0.1');
     context.after(() => new Promise((resolve, reject) => {
         server.close((error) => error ? reject(error) : resolve());
         server.closeAllConnections();
@@ -57,10 +58,11 @@ async function startApi(context, options) {
 
 test('CRUD HTTP con formato uniforme y codigos de estado', async (context) => {
     const baseUrl = await startApi(context);
+    const token = await iniciarSesionEmpleado(baseUrl);
     const request = async (path, method = 'GET', body) => {
         const response = await fetch(`${baseUrl}${path}`, {
             method,
-            headers: { 'Content-Type': 'application/json', Origin: 'http://localhost:5173' },
+            headers: { 'Content-Type': 'application/json', Origin: 'http://localhost:5173', Authorization: `Bearer ${token}` },
             body: body === undefined ? undefined : JSON.stringify(body)
         });
         assert.equal(response.headers.get('access-control-allow-origin'), 'http://localhost:5173');

@@ -1,9 +1,8 @@
 class Empleado {
-    constructor(id, nombre, cargo, salario) {
-        this.id = id;
+    constructor(dni, nombre, cargo) {
+        this.dni = dni;
         this.nombre = nombre;
         this.cargo = cargo;
-        this.salario = salario;
     }
 }
 

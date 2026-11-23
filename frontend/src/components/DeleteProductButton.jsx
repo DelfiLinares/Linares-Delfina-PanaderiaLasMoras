@@ -30,7 +30,12 @@ export default function DeleteProductButton({ product, onDeleted, compact = fals
                 title={`Eliminar ${product.nombre}`} aria-label={`Eliminar ${product.nombre}`} onClick={() => setOpen(true)}>
                 <Trash2 size={18} />{!compact && 'Eliminar'}
             </button>
-            {open && <ConfirmDialog product={product} busy={busy} onCancel={() => setOpen(false)} onConfirm={handleDelete} />}
+            {open && (
+                <ConfirmDialog title="¿Eliminar este producto?" confirmLabel="Eliminar producto" busyLabel="Eliminando..."
+                    busy={busy} onCancel={() => setOpen(false)} onConfirm={handleDelete}>
+                    Se eliminará <strong>{product.nombre}</strong> ({product.codigo}). Esta acción no se puede deshacer.
+                </ConfirmDialog>
+            )}
         </>
     );
 }

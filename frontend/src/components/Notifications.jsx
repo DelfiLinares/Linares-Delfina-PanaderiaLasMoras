@@ -14,6 +14,7 @@ export function NotificationProvider({ children }) {
     function notify(type, message) {
         const id = ++nextId.current;
         setNotifications((current) => [...current.slice(-3), { id, type, message }]);
+        setTimeout(() => dismiss(id), 5000);
     }
 
     return (

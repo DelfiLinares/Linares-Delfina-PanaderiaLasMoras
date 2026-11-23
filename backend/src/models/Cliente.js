@@ -1,9 +1,8 @@
 class Cliente {
-    constructor(id, nombre, telefono, email) {
-        this.id = id;
+    constructor(dni, nombre, telefono) {
+        this.dni = dni;
         this.nombre = nombre;
         this.telefono = telefono;
-        this.email = email;
     }
 }
 

@@ -1,6 +1,8 @@
-# API Las Moras - Entrega 2
+# API Las Moras - Entrega 3
 
-API REST de productos con Express y persistencia temporal en un array.
+API REST de la panaderia con Express y persistencia temporal en memoria.
+Incluye el CRUD de productos (Entrega 2) y la logica de venta: clientes, carrito,
+pedidos y actualizacion de stock.
 Requiere Node.js 20 o superior y npm.
 
 ## Ejecucion
@@ -16,8 +18,9 @@ La API escucha en `http://localhost:3000/products`. Para reiniciar automaticamen
 al modificar archivos, usar `npm run dev --prefix backend`.
 Para ejecutar las pruebas, usar `npm test --prefix backend`.
 
-Variables opcionales del entorno: `PORT` (por defecto `3000`) y `FRONTEND_URL`
-(por defecto `http://localhost:5173`, origen permitido por CORS).
+Variables opcionales del entorno: `PORT` (por defecto `3000`), `FRONTEND_URL`
+(por defecto `http://localhost:5173`, origen permitido por CORS) y `CODIGO_EMPLEADO`
+(por defecto `moras-empleados`, ver "Roles").
 En PowerShell, por ejemplo: `$env:PORT = '3001'` antes de iniciar el servidor.
 
 ## Arquitectura
@@ -103,4 +106,106 @@ El middleware no expone detalles internos al cliente.
 
 El array comienza vacio. Los datos se pierden al reiniciar el servidor;
 no se usa base de datos ni almacenamiento en archivos.
-Solo Producto tiene CRUD en esta entrega; los otros modelos se conservan.
+
+## Logica de venta (Entrega 3)
+
+El cliente se identifica con su DNI (7 u 8 digitos, texto). No hay contrasenas:
+"iniciar sesion" consiste en consultar `GET /clientes/:dni`.
+
+| Metodo | Ruta | Operacion | Estado exitoso |
+| --- | --- | --- | --- |
+| POST | `/clientes` | Registrar cliente `{ dni, nombre, telefono }` | 201 |
+| GET | `/clientes/:dni` | Consultar cliente (ingreso) | 200 |
+| GET | `/carritos/:dni` | Ver carrito con items, subtotales, total y unidades | 200 |
+| POST | `/carritos/:dni/items` | Agregar `{ codigo, cantidad }` (suma si ya existe) | 201 |
+| PUT | `/carritos/:dni/items/:codigo` | Fijar la cantidad `{ cantidad }` | 200 |
+| DELETE | `/carritos/:dni/items/:codigo` | Quitar un producto | 200 |
+| DELETE | `/carritos/:dni` | Vaciar el carrito | 200 |
+| POST | `/pedidos` | Confirmar la compra `{ dni }` | 201 |
+| GET | `/pedidos?dni=` | Consultar los pedidos del cliente (mas nuevos primero) | 200 |
+| POST | `/pedidos/:numero/cancelar` | Cancelar un pedido propio `{ dni }` | 200 |
+
+## Roles: clientes y empleados
+
+El sistema distingue dos roles y el backend hace cumplir las reglas, sin depender del frontend:
+
+| Rol | Puede | No puede |
+| --- | --- | --- |
+| Visitante | Consultar el menu (`GET /products`) | Comprar ni administrar productos |
+| Cliente | Consultar el menu, usar el carrito y los pedidos | Crear, editar ni eliminar productos (401) |
+| Empleado | Crear, editar y eliminar productos | Comprar: carrito y pedidos responden 403 |
+
+Un mismo DNI no puede ser cliente y empleado a la vez (409).
+
+| Metodo | Ruta | Operacion | Estado exitoso |
+| --- | --- | --- | --- |
+| POST | `/empleados` | Registrar empleado `{ dni, nombre, cargo, codigo }` | 201 |
+| POST | `/empleados/login` | Ingresar `{ dni, codigo }`; devuelve `{ empleado, token }` | 200 |
+| GET | `/empleados/me` | Datos del empleado de la sesion (requiere token) | 200 |
+| POST | `/empleados/logout` | Cerrar la sesion e invalidar el token (requiere token) | 200 |
+
+`codigo` es el codigo de empleado que conoce la panaderia: se define con la variable de entorno
+`CODIGO_EMPLEADO` (por defecto `moras-empleados`) y hace falta tanto para registrarse como para
+ingresar. Un codigo incorrecto al registrarse devuelve 403 y al ingresar 401.
+
+Las rutas `POST /products`, `PUT /products/:codigo` y `DELETE /products/:codigo` exigen el
+encabezado `Authorization: Bearer <token>` del empleado; sin el, con un token invalido o cerrado
+devuelven 401. Los clientes se identifican solo con su DNI, como antes. Las sesiones de empleado
+viven en memoria y se pierden al reiniciar el servidor, igual que el resto de los datos.
+Si se usa el DNI de un empleado en `/clientes`, `/carritos` o `/pedidos` se responde 403 con un
+mensaje que explica que los empleados no pueden realizar compras.
+
+El modelo `Empleado` se identifica por `dni` y tiene `nombre` y `cargo`.
+
+Reglas de negocio:
+
+- La cantidad debe ser un entero mayor o igual a 1 y nunca puede superar el stock
+  disponible (409 con el nombre del producto y las unidades disponibles).
+- Confirmar una compra valida todo el carrito antes de descontar: si falta stock en
+  algun producto no se modifica nada. Si es correcto, descuenta el stock, guarda el
+  pedido (con copia del nombre y precio de cada producto), calcula el total y vacia el carrito.
+- Un carrito vacio no se puede confirmar (409).
+- Cancelar un pedido (estado `cancelado`) repone el stock. Solo puede hacerlo el cliente
+  que lo realizo y no se puede cancelar dos veces (409).
+- Los errores usan el mismo formato y codigos que el CRUD: 400 datos invalidos,
+  404 cliente, producto, item o pedido inexistente, 409 conflictos de stock o estado.
+
+### Validaciones (se aplican siempre en el backend)
+
+| Dato | Regla | Mensaje (400) |
+| --- | --- | --- |
+| `dni` | Texto de 7 u 8 digitos, sin puntos ni letras | `El DNI debe tener 7 u 8 digitos, sin puntos.` |
+| `nombre` | Obligatorio, solo letras, espacios, `.`, `'` y `-`; hasta 120 caracteres | `El nombre es obligatorio, solo admite letras...` |
+| `telefono` | Obligatorio, 6 a 20 caracteres entre numeros, espacios, `+`, `-` y parentesis | `El telefono debe tener entre 6 y 20 caracteres...` |
+| `cantidad` | Numero entero mayor o igual a 1 (no acepta decimales ni textos) | `La cantidad debe ser un numero entero mayor o igual a 1.` |
+| `numero` de pedido | Solo digitos | `El numero de pedido no es valido.` |
+| Cuerpos JSON | No se aceptan campos de mas, cuerpos vacios ni que no sean un objeto | `Los datos enviados son invalidos.` |
+
+Otras reglas: no se registran dos clientes con el mismo DNI (409); no se opera con clientes,
+productos, items ni pedidos inexistentes (404); la cantidad en el carrito no puede superar el
+stock (409); un carrito vacio no se confirma (409); un pedido cancelado no se vuelve a cancelar
+(409) y solo lo cancela su dueno (404 para otro cliente). Si un producto se elimina, desaparece
+de los carritos y los pedidos ya hechos conservan el nombre y precio de la compra.
+El frontend replica las validaciones de formato para avisar antes de enviar, pero el
+backend no depende de ellas.
+
+Pedido devuelto:
+
+```json
+{
+    "numero": 1,
+    "fecha": "2026-11-23T16:19:00.000Z",
+    "total": 6800,
+    "cliente": { "dni": "40123456", "nombre": "Delfina Linares" },
+    "empleado": null,
+    "estado": "confirmado",
+    "detalles": [
+        { "producto": { "codigo": "P2", "nombre": "Pan de campo", "precio": 3200 }, "cantidad": 1, "subtotal": 3200 }
+    ]
+}
+```
+
+El modelo `Cliente` usa `dni` (segun el diagrama de clases) y `Pedido` incorpora
+`estado` y los metodos `agregarProducto` y `calcularTotal`. `Empleado` no interviene
+porque las compras las realiza el propio cliente desde la web.
+Los carritos y pedidos tambien viven en memoria y se pierden al reiniciar.
